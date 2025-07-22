@@ -9,12 +9,11 @@ require('dotenv').config();
 const multer = require('multer');
 
 const upload = multer({
-  dest: 'uploads/', // thư mục tạm
+  dest: '/tmp/uploads/',
   limits: {
-    fileSize: 50 * 1024 , // ⛔ Giới hạn 50MB
+    fileSize: 50 * 1024 * 1024,
   },
   fileFilter: (req, file, cb) => {
-    // Tuỳ ý: bạn có thể lọc theo loại file ở đây nếu muốn
     cb(null, true);
   },
 });
