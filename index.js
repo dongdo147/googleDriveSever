@@ -82,7 +82,7 @@ app.get('/oauth2callback', async (req, res) => {
     res.cookie('access_token', tokens.access_token, {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',       // 🔐 Chỉ gửi qua HTTPS
-  sameSite: 'Lax',    // hoặc 'Strict' nếu muốn cứng hơn
+  sameSite: 'None',    // hoặc 'Strict' nếu muốn cứng hơn
   maxAge: 3600 * 1000 // optional: 1 tiếng
 });
 res.send(`
