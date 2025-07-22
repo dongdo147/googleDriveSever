@@ -11,7 +11,7 @@ const multer = require('multer');
 const upload = multer({
   dest: 'uploads/', // thư mục tạm
   limits: {
-    fileSize: 50 * 1024 * 1024, // ⛔ Giới hạn 50MB
+    fileSize: 50 * 1024 , // ⛔ Giới hạn 50MB
   },
   fileFilter: (req, file, cb) => {
     // Tuỳ ý: bạn có thể lọc theo loại file ở đây nếu muốn
