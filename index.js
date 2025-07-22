@@ -58,9 +58,12 @@ app.use((err, req, res, next) => {
   }
   next(err);
 });
+app.get('/', (req, res) => {
+  res.json({ message: "hello" });
+});
 
 // Bước 1: Điều hướng người dùng đến link ủy quyền
-app.get('/', (req, res) => {
+app.get('/login', (req, res) => {
   const authUrl = oAuth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: SCOPES,
