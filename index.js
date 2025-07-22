@@ -85,7 +85,19 @@ app.get('/oauth2callback', async (req, res) => {
   sameSite: 'Lax',    // hoặc 'Strict' nếu muốn cứng hơn
   maxAge: 3600 * 1000 // optional: 1 tiếng
 });
-res.redirect(`${process.env.URL_ORIGIN}/oauth2callback`);
+res.send(`
+  <html>
+    <body>
+      <script>
+        setTimeout(() => {
+          window.location.href = "${process.env.URL_ORIGIN}/oauth2callback";
+        }, 1000);
+      </script>
+      <p>✅ Đăng nhập thành công. Đang chuyển hướng...</p>
+    </body>
+  </html>
+`);
+
 
   } catch (err) {
     console.error('❌ Lỗi khi lấy token:', err);
