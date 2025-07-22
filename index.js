@@ -27,17 +27,9 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
-
-
-
 const port = process.env.PORT;
-
-
-
 const SCOPES = ['https://www.googleapis.com/auth/drive'];
 const folderId = process.env.FOLDERID;
-
-
 const oAuth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
@@ -111,6 +103,11 @@ app.get('/me', (req, res) => {
   res.json({ authenticated: true, token });
 });
 app.post('/upload', upload.single('file'), async (req, res) => {
+   const token = req.cookies['access_token'];
+
+  if (!token) {
+    return res.status(401).json({ authenticated: false });
+  }
   const file = req.file;
 
   if (!file) return res.status(400).send('❌ Không có file nào được upload!');
@@ -156,6 +153,11 @@ app.post('/upload', upload.single('file'), async (req, res) => {
   }
 });
 app.get('/files', async (req, res) => {
+   const token = req.cookies['access_token'];
+
+  if (!token) {
+    return res.status(401).json({ authenticated: false });
+  }
   try {
 
     const auth = oAuth2Client;
@@ -178,6 +180,11 @@ app.get('/files', async (req, res) => {
 });
 
 app.get('/download/:id', async (req, res) => {
+   const token = req.cookies['access_token'];
+
+  if (!token) {
+    return res.status(401).json({ authenticated: false });
+  }
   const fileId = req.params.id;
 
 
@@ -216,6 +223,11 @@ app.get('/download/:id', async (req, res) => {
   }
 });
 app.delete('/files/:id', async (req, res) => {
+   const token = req.cookies['access_token'];
+
+  if (!token) {
+    return res.status(401).json({ authenticated: false });
+  }
   const fileId = req.params.id;
 
 
@@ -235,8 +247,8 @@ app.delete('/files/:id', async (req, res) => {
 });
 
 // Khởi chạy server
-// app.listen(port, () => {
-//   console.log(`🌐 Server đang chạy tại http://localhost:${port}`);
-//   console.log('📤 Truy cập để bắt đầu xác thực với Google Drive');
-// });
+app.listen(port, () => {
+  console.log(`🌐 Server đang chạy tại http://localhost:${port}`);
+  console.log('📤 Truy cập để bắt đầu xác thực với Google Drive');
+});
 module.exports = app;
