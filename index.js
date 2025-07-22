@@ -229,8 +229,8 @@ app.delete('/files/:id', async (req, res) => {
 });
 
 // Khởi chạy server
-app.listen(port, () => {
-  console.log(`🌐 Server đang chạy tại http://localhost:${port}`);
-  console.log('📤 Truy cập để bắt đầu xác thực với Google Drive');
-});
+// app.listen(port, () => {
+//   console.log(`🌐 Server đang chạy tại http://localhost:${port}`);
+//   console.log('📤 Truy cập để bắt đầu xác thực với Google Drive');
+// });
 module.exports = app;
