@@ -23,7 +23,7 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: process.env.URL_ORIGIN,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -42,19 +42,22 @@ const folderId = process.env.FOLDERID;
 const oAuth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
-  `http://localhost:${port}/oauth2callback`
+  `${process.env.SEVER_URL}/oauth2callback`
 );
-function loadSavedCredentialsIfExist() {
-  try {
-    const content = fs.readFileSync('token.json');
-    const credentials = JSON.parse(content);
-    oAuth2Client.setCredentials(credentials);
-    return true;
-  } catch (err) {
-    console.warn('⚠️ Không tìm thấy token hoặc lỗi đọc file token.json');
-    return false;
+app.use((req, res, next) => {
+  const accessToken = req.cookies['access_token'];
+  if (accessToken) {
+    oAuth2Client.setCredentials({ access_token: accessToken });
   }
-}
+  next();
+});
+app.use((err, req, res, next) => {
+  if (err.message.includes('invalid_grant') || err.message.includes('Invalid Credentials')) {
+    res.clearCookie('access_token');
+    return res.status(401).json({ error: '❌ Token hết hạn. Vui lòng đăng nhập lại.' });
+  }
+  next(err);
+});
 
 // Bước 1: Điều hướng người dùng đến link ủy quyền
 app.get('/', (req, res) => {
@@ -81,7 +84,7 @@ app.get('/oauth2callback', async (req, res) => {
   sameSite: 'Lax',    // hoặc 'Strict' nếu muốn cứng hơn
   maxAge: 3600 * 1000 // optional: 1 tiếng
 });
-res.redirect('http://localhost:3000/oauth2callback');
+res.redirect(`${process.env.URL_ORIGIN}/oauth2callback`);
 
   } catch (err) {
     console.error('❌ Lỗi khi lấy token:', err);
@@ -104,9 +107,6 @@ app.post('/upload', upload.single('file'), async (req, res) => {
   if (!file) return res.status(400).send('❌ Không có file nào được upload!');
 
   try {
-    const saved = loadSavedCredentialsIfExist();
-    if (!saved) return res.status(401).send('❌ Chưa xác thực.');
-
     const auth = oAuth2Client;
     const drive = google.drive({ version: 'v3', auth });
 
@@ -148,8 +148,6 @@ app.post('/upload', upload.single('file'), async (req, res) => {
 });
 app.get('/files', async (req, res) => {
   try {
-    if (!loadSavedCredentialsIfExist())
-      return res.status(401).json({ error: '❌ Chưa xác thực.' });
 
     const auth = oAuth2Client;
     const drive = google.drive({ version: 'v3', auth });
@@ -173,9 +171,7 @@ app.get('/files', async (req, res) => {
 app.get('/download/:id', async (req, res) => {
   const fileId = req.params.id;
 
-  if (!loadSavedCredentialsIfExist()) {
-    return res.status(401).send('❌ Chưa xác thực.');
-  }
+
 
   const auth = oAuth2Client;
   const drive = google.drive({ version: 'v3', auth });
@@ -213,9 +209,6 @@ app.get('/download/:id', async (req, res) => {
 app.delete('/files/:id', async (req, res) => {
   const fileId = req.params.id;
 
-  if (!loadSavedCredentialsIfExist()) {
-    return res.status(401).json({ error: '❌ Chưa xác thực.' });
-  }
 
   try {
     const auth = oAuth2Client;
