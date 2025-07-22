@@ -52,12 +52,19 @@ app.use((req, res, next) => {
   next();
 });
 app.use((err, req, res, next) => {
-  if (err.message.includes('invalid_grant') || err.message.includes('Invalid Credentials')) {
+  console.error('❗ Middleware error:', err);
+
+  if (err && err.message && (
+    err.message.includes('invalid_grant') ||
+    err.message.includes('Invalid Credentials'))
+  ) {
     res.clearCookie('access_token');
     return res.status(401).json({ error: '❌ Token hết hạn. Vui lòng đăng nhập lại.' });
   }
+
   next(err);
 });
+
 app.get('/', (req, res) => {
   res.json({ message: "hello" });
 });
