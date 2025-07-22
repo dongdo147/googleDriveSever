@@ -233,3 +233,4 @@ app.listen(port, () => {
   console.log(`🌐 Server đang chạy tại http://localhost:${port}`);
   console.log('📤 Truy cập để bắt đầu xác thực với Google Drive');
 });
+module.exports = app;
