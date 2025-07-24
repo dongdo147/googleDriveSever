@@ -97,24 +97,68 @@ router.post('/create-folder', requireAuth, async (req, res) => {
     res.status(500).json({ error: '❌ Có lỗi khi tạo folder.' });
   }
 });
-
-// Existing /files route
 router.get('/', requireAuth, async (req, res) => {
   try {
     const drive = google.drive({ version: 'v3', auth: oAuth2Client });
-    if (req.query.folderId && typeof req.query.folderId !== 'string') {
-      return res.status(400).json({ error: 'Invalid folderId' });
-    }
+    const folderIdToUse = req.query.folderId || folderId;
 
     const result = await drive.files.list({
-      q: `'${req.query.folderId || folderId}' in parents and trashed = false`,
-      fields: 'files(id, name, mimeType, webViewLink)',
+      q: `'${folderIdToUse}' in parents and trashed = false`,
+      fields: 'files(id, name, mimeType, webViewLink, createdTime, size)',
       supportsAllDrives: true,
       includeItemsFromAllDrives: true,
     });
 
-    const files = result.data.files || [];
-    res.json({ files });
+    let files = result.data.files || [];
+
+    const keyword = req.query.keyword?.toLowerCase() || '';
+    const sortBy = req.query.sortBy || '';       // 'createdTime' | 'size'
+    const sortOrder = req.query.sortOrder || ''; // 'asc' | 'desc'
+
+  
+    let folders = files.filter(f => f.mimeType === 'application/vnd.google-apps.folder');
+let regularFiles = files.filter(f => f.mimeType !== 'application/vnd.google-apps.folder');
+
+// Nếu có keyword, lọc tên folder luôn
+if (keyword) {
+  folders = folders.filter(f => f.name.toLowerCase().includes(keyword));
+}
+
+
+    // 2. Tìm kiếm cơ bản theo keyword (nếu có)
+    if (keyword) {
+      regularFiles = regularFiles
+        .filter(f => f.name.toLowerCase().includes(keyword))
+        .sort((a, b) => {
+          const aName = a.name.toLowerCase();
+          const bName = b.name.toLowerCase();
+          const aStarts = aName.startsWith(keyword) ? 1 : 0;
+          const bStarts = bName.startsWith(keyword) ? 1 : 0;
+          return bStarts - aStarts || aName.indexOf(keyword) - bName.indexOf(keyword);
+        });
+    }
+
+   // 3. Sắp xếp nếu có yêu cầu
+if (sortBy === 'createdTime') {
+  const sortFn = (a, b) => {
+    const timeA = new Date(a.createdTime).getTime();
+    const timeB = new Date(b.createdTime).getTime();
+    return sortOrder === 'asc' ? timeA - timeB : timeB - timeA;
+  };
+  folders.sort(sortFn);
+  regularFiles.sort(sortFn);
+} else if (sortBy === 'size') {
+  // Size chỉ áp dụng cho file
+  regularFiles.sort((a, b) => {
+    const sizeA = parseInt(a.size || '0', 10);
+    const sizeB = parseInt(b.size || '0', 10);
+    return sortOrder === 'asc' ? sizeA - sizeB : sizeB - sizeA;
+  });
+}
+
+
+    const finalFiles = [...folders, ...regularFiles];
+    res.json({ files: finalFiles });
   } catch (err) {
     console.error('❌ Lỗi khi lấy danh sách file:', err);
     res.status(500).json({ error: '❌ Có lỗi xảy ra khi lấy danh sách file.' });
